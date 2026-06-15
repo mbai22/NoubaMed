@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { usePathname } from "next/navigation";
+import { useState, useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { Sidebar, SidebarToggle } from "./sidebar";
 import { NotificationsDropdown } from "./notifications";
 import { ThemeToggle } from "./theme-toggle";
@@ -13,11 +14,34 @@ const titles: Record<string, string> = {
   "/teleconsultation": "Téléconsultation",
   "/billing": "Facturation",
   "/records": "Dossiers médicaux",
+  "/messages": "Messages",
+  "/notifications": "Notifications",
+  "/ordonnances": "Ordonnances",
+  "/calendrier": "Calendrier",
 };
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
+  const { data: session, status } = useSession();
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/login");
+    }
+  }, [status, router]);
+
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-surface-muted-light dark:bg-surface-muted-dark">
+        <div className="text-gray-400">Chargement...</div>
+      </div>
+    );
+  }
+
+  if (status === "unauthenticated") return null;
+
   const title = titles[pathname] || "NoubaMed";
 
   return (
@@ -41,9 +65,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             <div className="hidden md:block">
               <ThemeToggle />
             </div>
-            <button className="p-2 rounded-xl text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-primary-900/20 dark:hover:text-gray-300 transition-all cursor-pointer md:hidden">
-              <span className="text-lg">⚙️</span>
-            </button>
           </div>
         </header>
         <main className="p-4 md:p-8">{children}</main>

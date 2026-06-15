@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "./theme-toggle";
 
@@ -10,13 +10,20 @@ const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: "◉" },
   { href: "/patients", label: "Patients", icon: "◎" },
   { href: "/appointments", label: "Rendez-vous", icon: "◈" },
+  { href: "/calendrier", label: "Calendrier", icon: "📅" },
   { href: "/teleconsultation", label: "Téléconsultation", icon: "▶" },
   { href: "/billing", label: "Facturation", icon: "€" },
+  { href: "/ordonnances", label: "Ordonnances", icon: "📋" },
   { href: "/records", label: "Dossiers", icon: "◇" },
+  { href: "/messages", label: "Messages", icon: "✉" },
+  { href: "/notifications", label: "Notifications", icon: "🔔" },
 ];
 
 export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
   const pathname = usePathname();
+  const { data: session } = useSession();
+  const router = useRouter();
+  const user = session?.user;
 
   const sidebar = (
     <aside className="h-full w-64 border-r border-primary-100 bg-white dark:border-primary-800 dark:bg-surface-dark flex flex-col">
@@ -31,7 +38,7 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
         </Link>
       </div>
 
-      <nav className="flex-1 px-3 space-y-1">
+      <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
         {navItems.map((item) => {
           const isActive = pathname.startsWith(item.href);
           return (
@@ -54,28 +61,31 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
       </nav>
 
       <div className="p-4 border-t border-primary-100 dark:border-primary-800">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center text-white text-xs font-bold">
-              DR
+              {user?.image || user?.name?.charAt(0) || "D"}
             </div>
             <div className="text-sm">
-              <p className="font-medium text-gray-900 dark:text-white">Dr. Martin</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Médecin traitant</p>
+              <p className="font-medium text-gray-900 dark:text-white">{user?.name || "Dr. Martin"}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{user?.role || "Médecin"}</p>
             </div>
           </div>
           <ThemeToggle />
         </div>
+        <button
+          onClick={() => signOut({ callbackUrl: "/login" })}
+          className="w-full text-xs text-center py-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-all cursor-pointer"
+        >
+          Déconnexion
+        </button>
       </div>
     </aside>
   );
 
   return (
     <>
-      {/* Desktop sidebar */}
       <div className="hidden md:block fixed left-0 top-0 h-screen z-50">{sidebar}</div>
-
-      {/* Mobile drawer */}
       {open && (
         <div className="fixed inset-0 z-50 md:hidden">
           <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
